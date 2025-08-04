@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Health Dashboard | MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="FamPage.js" defer></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        'carolina-blue': '#74B3CE',
+                        'blue-munsell': '#508991',
+                        'prussian-blue': '#172A3A',
+                        'midnight-green': '#004346',
+                        'mint': '#09BC8A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-button {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .animate-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        .animate-button:hover:before {
+            left: 100%;
+        }
+        .animate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .scroll-smooth {
+            scroll-behavior: smooth;
+        }
+        .hero-bg {
+            background: linear-gradient(135deg, #74B3CE 0%, #508991 50%, #172A3A 100%);
+        }
+        @font-face {
+            font-family: 'Para';
+            src: url('fonts/ParaRegular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        .font-para {
+            font-family: 'Para', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="scroll-smooth font-sans bg-stone-100">
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 bg-white shadow-lg">
+        <div class="max-w-full ml-8 px-4 sm:px-6 lg:px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-3xl font-bold text-prussian-blue">
+                            <img src="images/logo_main.png" alt="" class="w-12 h-12 inline rounded-md"> MediConnect
+                        </h1>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="dashboard.html"
+                            class="text-prussian-blue hover:text-mint px-3 py-2 text-sm font-medium transition-colors"><i
+                                class="fa-solid fa-home text-base pr-1.5"></i>Home</a>
+                        <a href="profile.html"
+                            class="text-prussian-blue hover:text-mint px-3 py-2 text-sm font-medium transition-colors"><i
+                                class="fa-solid fa-user text-base pr-1.5"></i>My Profile</a>
+                        <a href="FamPage.html"
+                            class="text-mint px-3 py-2 text-sm font-medium transition-colors"><i
+                                class="fa-solid fa-users text-base pr-1.5"></i>Family</a>
+                        <a href="logout.html"
+                            class="text-prussian-blue hover:text-mint px-3 py-2 text-sm font-medium transition-colors"><i
+                                class="fa-solid fa-sign-out-alt text-base pr-1.5"></i>Logout</a>
+                    </div>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="text-prussian-blue hover:text-mint">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="dashboard.html"
+                    class="text-prussian-blue hover:text-mint block px-3 py-2 text-base font-medium">Home</a>
+                <a href="profile.html"
+                    class="text-prussian-blue hover:text-mint block px-3 py-2 text-base font-medium">My Profile</a>
+                <a href="FamPage.html"
+                    class="text-mint block px-3 py-2 text-base font-medium">Family</a>
+                <a href="logout.html"
+                    class="text-prussian-blue hover:text-mint block px-3 py-2 text-base font-medium">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Family Health Dashboard -->
+    <main class="pt-24 pb-12 max-w-6xl mx-auto px-4">
+        <h2 class="text-4xl font-bold text-prussian-blue mb-8 text-center">Your Family Health Dashboard</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Family Members List -->
+            <section id="family-summary" class="bg-white rounded-xl shadow-lg p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-blue-munsell">Family Members</h3>
+                    <button id="add-member-btn" class="animate-button bg-mint text-white px-4 py-2 rounded-full font-semibold">
+                        <i class="fa-solid fa-user-plus pr-2"></i>Add Member
+                    </button>
+                </div>
+                <div id="family-list" class="space-y-4">
+                    <!-- Family members will be dynamically listed here -->
+                </div>
+            </section>
+            <!-- Medical Data -->
+            <section id="medical-data" class="bg-white rounded-xl shadow-lg p-8">
+                <h3 class="text-2xl font-bold text-blue-munsell mb-6">Medical Records</h3>
+                <div id="medical-records">
+                    <!-- Medical data for selected family member will appear here -->
+                    <div class="text-gray-500 text-center">Select a family member to view their medical data.</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-prussian-blue text-white py-8">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <span class="font-bold">MediConnect</span> &copy; 2025. All rights reserved.
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-mint"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="hover:text-mint"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="hover:text-mint"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="hover:text-mint"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Static family members data
+        const familyMembers = [
+            {
+                id: 1,
+                name: "Ravi Kumar",
+                relation: "Father",
+                age: 52,
+                gender: "Male",
+                medical: [
+                    { label: "Blood Group", value: "B+" },
+                    { label: "Diabetes", value: "Type 2" },
+                    { label: "Allergies", value: "None" }
+                ]
+            },
+            {
+                id: 2,
+                name: "Sita Kumari",
+                relation: "Mother",
+                age: 48,
+                gender: "Female",
+                medical: [
+                    { label: "Blood Group", value: "O+" },
+                    { label: "Hypertension", value: "Yes" },
+                    { label: "Allergies", value: "Penicillin" }
+                ]
+            },
+            {
+                id: 3,
+                name: "Amit Kumar",
+                relation: "Son",
+                age: 22,
+                gender: "Male",
+                medical: [
+                    { label: "Blood Group", value: "B+" },
+                    { label: "Asthma", value: "Mild" },
+                    { label: "Allergies", value: "Dust" }
+                ]
+            }
+        ];
+
+        // Render family members
+        const familyList = document.getElementById('family-list');
+        const medicalRecords = document.getElementById('medical-records');
+
+        function renderFamilyList() {
+            familyList.innerHTML = '';
+            familyMembers.forEach(member => {
+                const div = document.createElement('div');
+                div.className = "card-hover p-4 bg-stone-100 rounded-lg flex justify-between items-center cursor-pointer";
+                div.innerHTML = `
+                    <div>
+                        <div class="font-bold text-lg text-prussian-blue">${member.name}</div>
+                        <div class="text-blue-munsell text-sm">${member.relation}, Age: ${member.age}, ${member.gender}</div>
+                    </div>
+                    <button class="text-mint hover:text-prussian-blue" onclick="showMedical(${member.id})">
+                        <i class="fa-solid fa-notes-medical"></i> View
+                    </button>
+                `;
+                div.onclick = () => showMedical(member.id);
+                familyList.appendChild(div);
+            });
+        }
+
+        // Show medical data for selected member
+        function showMedical(id) {
+            const member = familyMembers.find(m => m.id === id);
+            if (!member) return;
+            medicalRecords.innerHTML = `
+                <div class="mb-4">
+                    <div class="text-xl font-bold text-prussian-blue">${member.name}</div>
+                    <div class="text-blue-munsell mb-2">${member.relation}, Age: ${member.age}, ${member.gender}</div>
+                </div>
+                <ul class="space-y-2">
+                    ${member.medical.map(med => `<li class="bg-stone-100 rounded p-3"><span class="font-semibold">${med.label}:</span> ${med.value}</li>`).join('')}
+                </ul>
+            `;
+        }
+
+        // Initial render
+        renderFamilyList();
+</script>
+</body>
+</html>
