@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Checker - MediConnect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'carolina-blue': '#74B3CE',
+                        'blue-munsell': '#508991',
+                        'prussian-blue': '#172A3A',
+                        'midnight-green': '#004346',
+                        'mint': '#09BC8A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dashboard-bg {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #74B3CE 0%, #508991 50%, #004346 100%);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .symptom-tag {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .symptom-tag:hover {
+            transform: translateY(-1px);
+        }
+
+        .symptom-tag.selected {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(116, 179, 206, 0.3);
+        }
+
+        .severity-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+        }
+
+        .severity-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #09BC8A;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .severity-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #09BC8A;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+
+        .loading-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="dashboard-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-8 px-1 sm:px-6 lg:px-1">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="userDashboard.html"
+                        class="text-blue-munsell hover:text-mint transition-colors fas fa-arrow-left">
+                    </a>
+                    <h1 class="text-3xl font-bold text-prussian-blue">
+                        <img src="images/logo_main.png" alt="" class="w-12 h-12 inline rounded-md"> MediConnect
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="gradient-bg py-12">
+        <div class="max-w-4xl mx-auto px-4 text-center text-white">
+            <div class="mb-6">
+                <i class="fas fa-stethoscope text-6xl mb-4 opacity-90"></i>
+            </div>
+            <h1 class="text-4xl font-bold mb-4">AI-Powered Symptom Checker</h1>
+            <p class="text-xl opacity-90 mb-8">Get instant health guidance with our advanced symptom analysis system</p>
+            <div class="flex justify-center space-x-8 text-sm">
+                <div class="flex items-center">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    <span>FDA Approved Recommendations</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-user-md mr-2"></i>
+                    <span>Doctor Reviewed</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-lock mr-2"></i>
+                    <span>HIPAA Compliant</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Symptom Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-prussian-blue mb-2">Describe Your Symptoms</h2>
+                        <p class="text-blue-munsell">Select symptoms that match your current condition</p>
+                    </div>
+
+                    <form id="symptomForm" onsubmit="return handleSymptomCheck(event)">
+                        <!-- Symptom Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-prussian-blue mb-3">Select Symptoms</label>
+                            <div id="symptomTags" class="space-y-4">
+                                <!-- Symptom categories will be populated here -->
+                            </div>
+
+                            <!-- Custom Symptom Input -->
+                            <div class="mt-4">
+                                <div class="relative">
+                                    <input type="text" id="customSymptom"
+                                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mint focus:border-mint"
+                                        placeholder="Add custom symptom and press Enter">
+                                    <i class="fas fa-plus absolute left-3 top-4 text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Severity and Duration -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Severity -->
+                            <div>
+                                <label class="block text-sm font-semibold text-prussian-blue mb-3">Severity
+                                    Level</label>
+                                <div class="px-3">
+                                    <input type="range" class="severity-slider w-full" id="severity" min="1" max="10"
+                                        value="5">
+                                    <div class="flex justify-between text-xs text-blue-munsell mt-2">
+                                        <span>Mild (1-3)</span>
+                                        <span id="severityValue" class="font-semibold text-mint">5</span>
+                                        <span>Severe (8-10)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Duration -->
+                            <div>
+                                <label class="block text-sm font-semibold text-prussian-blue mb-3">Duration</label>
+                                <select
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mint focus:border-mint"
+                                    id="duration" required>
+                                    <option value="">Select duration</option>
+                                    <option value="less_than_day">Less than a day</option>
+                                    <option value="1-3_days">1-3 days</option>
+                                    <option value="4-7_days">4-7 days</option>
+                                    <option value="more_than_week">More than a week</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-prussian-blue mb-3">Additional
+                                Information</label>
+                            <textarea
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mint focus:border-mint"
+                                id="notes" rows="3"
+                                placeholder="Any additional details about your symptoms, triggers, or concerns"></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit"
+                            class="w-full bg-mint text-white py-4 rounded-lg font-semibold hover:bg-midnight-green transition-colors flex items-center justify-center">
+                            <i id="loadingSpinner" class="fas fa-spinner loading-spin mr-2 hidden"></i>
+                            <i id="submitIcon" class="fas fa-search mr-2"></i>
+                            <span id="submitText">Analyze Symptoms</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="space-y-6">
+                <!-- Quick Tips -->
+                <div class="bg-white rounded-xl shadow-lg p-6 card-hover">
+                    <h3 class="text-lg font-bold text-prussian-blue mb-4">
+                        <i class="fas fa-lightbulb text-mint mr-2"></i>Quick Tips
+                    </h3>
+                    <div class="space-y-3 text-sm text-blue-munsell">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-mint mr-2 mt-0.5"></i>
+                            <span>Be as specific as possible when describing symptoms</span>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-mint mr-2 mt-0.5"></i>
+                            <span>Include when symptoms started and how they've changed</span>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-mint mr-2 mt-0.5"></i>
+                            <span>Note any triggers or patterns you've noticed</span>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-mint mr-2 mt-0.5"></i>
+                            <span>This tool provides guidance, not diagnosis</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Warning -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-red-700 mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Seek Emergency Care If:
+                    </h3>
+                    <div class="space-y-2 text-sm text-red-600">
+                        <div>• Difficulty breathing or shortness of breath</div>
+                        <div>• Chest pain or pressure</div>
+                        <div>• Sudden confusion or difficulty staying awake</div>
+                        <div>• Severe or persistent vomiting</div>
+                        <div>• Signs of severe dehydration</div>
+                    </div>
+                    <button
+                        class="w-full mt-4 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors">
+                        <i class="fas fa-phone mr-2"></i>Call Emergency Services
+                    </button>
+                </div>
+
+                <!-- Privacy Notice -->
+                <div class="bg-blue-50 border border-carolina-blue rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-prussian-blue mb-3">
+                        <i class="fas fa-shield-alt mr-2"></i>Your Privacy
+                    </h3>
+                    <p class="text-sm text-blue-munsell">
+                        Your health information is protected and handled in accordance with applicable privacy laws.
+                        We do not store personal health data without your consent.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultSection" class="mt-8 hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-prussian-blue mb-6">
+                    <i class="fas fa-chart-line text-mint mr-2"></i>Analysis Results
+                </h2>
+
+                <!-- Severity Indicator -->
+                <div id="severityResult" class="mb-6 p-4 rounded-lg">
+                    <!-- Populated by JavaScript -->
+                </div>
+
+                <!-- Recommendations and Medications -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div id="recommendationsSection">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <div id="medicationsSection">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 mt-8">
+                    <button onclick="saveToMedicalHistory()"
+                        class="flex-1 bg-carolina-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-munsell transition-colors">
+                        <i class="fas fa-save mr-2"></i>Save to Medical History
+                    </button>
+                    <button onclick="consultDoctor()"
+                        class="flex-1 bg-midnight-green text-white py-3 rounded-lg font-semibold hover:bg-prussian-blue transition-colors">
+                        <i class="fas fa-user-md mr-2"></i>Consult a Doctor
+                    </button>
+                    <button onclick="resetForm()"
+                        class="px-6 py-3 border border-gray-300 text-blue-munsell rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-redo mr-2"></i>New Check
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common symptoms organized by category
+        const commonSymptoms = [
+            {
+                category: 'Respiratory',
+                icon: 'fas fa-lungs',
+                color: 'carolina-blue',
+                symptoms: ['Cough', 'Shortness of Breath', 'Chest Pain', 'Runny Nose', 'Sore Throat', 'Congestion', 'Wheezing']
+            },
+            {
+                category: 'General',
+                icon: 'fas fa-thermometer-half',
+                color: 'mint',
+                symptoms: ['Fever', 'Fatigue', 'Body Aches', 'Chills', 'Sweating', 'Loss of Appetite', 'Weight Loss']
+            },
+            {
+                category: 'Digestive',
+                icon: 'fas fa-stomach',
+                color: 'blue-munsell',
+                symptoms: ['Nausea', 'Vomiting', 'Diarrhea', 'Abdominal Pain', 'Indigestion', 'Constipation', 'Bloating']
+            },
+            {
+                category: 'Neurological',
+                icon: 'fas fa-brain',
+                color: 'midnight-green',
+                symptoms: ['Headache', 'Dizziness', 'Confusion', 'Memory Issues', 'Numbness', 'Tingling', 'Vision Changes']
+            },
+            {
+                category: 'Skin',
+                icon: 'fas fa-hand-paper',
+                color: 'prussian-blue',
+                symptoms: ['Rash', 'Itching', 'Hives', 'Swelling', 'Bruising', 'Skin Discoloration', 'Dry Skin']
+            }
+        ];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeSymptomTags();
+            setupEventListeners();
+        });
+
+        // Initialize symptom tags
+        function initializeSymptomTags() {
+            const container = document.getElementById('symptomTags');
+            container.innerHTML = '';
+
+            commonSymptoms.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-4';
+
+                // Category header
+                categoryDiv.innerHTML = `
+                    <div class="flex items-center mb-3">
+                        <i class="${category.icon} text-${category.color} mr-2"></i>
+                        <h4 class="font-semibold text-prussian-blue">${category.category}</h4>
+                    </div>
+                    <div class="flex flex-wrap gap-2" id="${category.category.toLowerCase()}-symptoms">
+                    </div>
+                `;
+
+                container.appendChild(categoryDiv);
+
+                // Add symptoms
+                const symptomsContainer = document.getElementById(`${category.category.toLowerCase()}-symptoms`);
+                category.symptoms.forEach(symptom => {
+                    const tag = document.createElement('span');
+                    tag.className = `symptom-tag px-3 py-2 bg-gray-100 text-gray-700 rounded-full text-sm border-2 border-transparent hover:border-${category.color} hover:bg-${category.color} hover:bg-opacity-10`;
+                    tag.textContent = symptom;
+                    tag.setAttribute('data-category', category.category);
+                    tag.onclick = () => toggleSymptom(tag, category.color);
+                    symptomsContainer.appendChild(tag);
+                });
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Severity slider
+            const severitySlider = document.getElementById('severity');
+            const severityValue = document.getElementById('severityValue');
+
+            severitySlider.addEventListener('input', function () {
+                severityValue.textContent = this.value;
+
+                // Change color based on severity
+                if (this.value <= 3) {
+                    severityValue.className = 'font-semibold text-mint';
+                } else if (this.value <= 7) {
+                    severityValue.className = 'font-semibold text-carolina-blue';
+                } else {
+                    severityValue.className = 'font-semibold text-red-500';
+                }
+            });
+
+            // Custom symptom input
+            document.getElementById('customSymptom').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const symptom = this.value.trim();
+                    if (symptom) {
+                        addCustomSymptom(symptom);
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        // Toggle symptom selection
+        function toggleSymptom(tag, color) {
+            if (tag.classList.contains('selected')) {
+                tag.classList.remove('selected', `bg-${color}`, `text-white`, `border-${color}`);
+                tag.classList.add('bg-gray-100', 'text-gray-700', 'border-transparent');
+            } else {
+                tag.classList.add('selected', `bg-${color}`, `text-white`, `border-${color}`);
+                tag.classList.remove('bg-gray-100', 'text-gray-700', 'border-transparent');
+            }
+        }
+
+        // Add custom symptom
+        function addCustomSymptom(symptom) {
+            const container = document.getElementById('symptomTags');
+            const customDiv = document.getElementById('custom-symptoms') || createCustomSymptomsSection();
+
+            const tag = document.createElement('span');
+            tag.className = 'symptom-tag px-3 py-2 bg-gray-100 text-gray-700 rounded-full text-sm border-2 border-transparent hover:border-mint hover:bg-mint hover:bg-opacity-10 selected bg-mint text-white border-mint';
+            tag.textContent = symptom;
+            tag.setAttribute('data-category', 'Custom');
+            tag.onclick = () => toggleSymptom(tag, 'mint');
+
+            customDiv.querySelector('.flex').appendChild(tag);
+        }
+
+        // Create custom symptoms section
+        function createCustomSymptomsSection() {
+            const container = document.getElementById('symptomTags');
+            const customDiv = document.createElement('div');
+            customDiv.id = 'custom-symptoms';
+            customDiv.className = 'mb-4';
+            customDiv.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-plus text-mint mr-2"></i>
+                    <h4 class="font-semibold text-prussian-blue">Custom Symptoms</h4>
+                </div>
+                <div class="flex flex-wrap gap-2"></div>
+            `;
+            container.appendChild(customDiv);
+            return customDiv;
+        }
+
+        // Handle symptom check form submission
+        function handleSymptomCheck(event) {
+            event.preventDefault();
+
+            const selectedSymptoms = Array.from(document.querySelectorAll('.symptom-tag.selected'))
+                .map(tag => tag.textContent);
+
+            if (selectedSymptoms.length === 0) {
+                alert('Please select at least one symptom');
+                return false;
+            }
+
+            const severity = document.getElementById('severity').value;
+            const duration = document.getElementById('duration').value;
+            const notes = document.getElementById('notes').value;
+
+            if (!duration) {
+                alert('Please select symptom duration');
+                return false;
+            }
+
+            // Show loading state
+            showLoadingState();
+
+            // Simulate analysis
+            setTimeout(() => {
+                analyzeSymptoms(selectedSymptoms, severity, duration, notes);
+                hideLoadingState();
+                document.getElementById('resultSection').classList.remove('hidden');
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+
+            return false;
+        }
+
+        // Show loading state
+        function showLoadingState() {
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('submitIcon').classList.add('hidden');
+            document.getElementById('submitText').textContent = 'Analyzing...';
+            document.querySelector('#symptomForm button[type="submit"]').disabled = true;
+        }
+
+        // Hide loading state
+        function hideLoadingState() {
+            document.getElementById('loadingSpinner').classList.add('hidden');
+            document.getElementById('submitIcon').classList.remove('hidden');
+            document.getElementById('submitText').textContent = 'Analyze Symptoms';
+            document.querySelector('#symptomForm button[type="submit"]').disabled = false;
+        }
+
+        // Analyze symptoms and show results
+        function analyzeSymptoms(symptoms, severity, duration, notes) {
+            // Determine severity level and color
+            let severityLevel, severityColor, severityBg;
+            if (severity <= 3) {
+                severityLevel = 'Low Severity';
+                severityColor = 'text-mint';
+                severityBg = 'bg-mint bg-opacity-10 border-mint';
+            } else if (severity <= 7) {
+                severityLevel = 'Moderate Severity';
+                severityColor = 'text-carolina-blue';
+                severityBg = 'bg-carolina-blue bg-opacity-10 border-carolina-blue';
+            } else {
+                severityLevel = 'High Severity';
+                severityColor = 'text-red-500';
+                severityBg = 'bg-red-50 border-red-200';
+            }
+
+            // Update severity result
+            document.getElementById('severityResult').innerHTML = `
+                <div class="flex items-center ${severityBg} border rounded-lg p-4">
+                    <div class="w-4 h-4 rounded-full ${severityColor.replace('text-', 'bg-')} mr-3"></div>
+                    <div>
+                        <h3 class="font-semibold ${severityColor}">${severityLevel}</h3>
+                        <p class="text-sm text-blue-munsell">Severity Score: ${severity}/10 | Duration: ${duration.replace('_', ' ')}</p>
+                    </div>
+                </div>
+            `;
+
+            // Generate recommendations
+            generateRecommendations(symptoms, severity);
+
+            // Generate medication suggestions
+            generateMedicationSuggestions(symptoms, severity, duration);
+
+            // Show doctor consultation warning if needed
+            if (severity > 7 || duration === 'more_than_week') {
+                showDoctorWarning();
+            }
+        }
+
+        // Generate recommendations
+        function generateRecommendations(symptoms, severity) {
+            const container = document.getElementById('recommendationsSection');
+
+            let recommendations = `
+                <div>
+                    <h3 class="text-lg font-bold text-prussian-blue mb-4">
+                        <i class="fas fa-clipboard-check text-mint mr-2"></i>Recommendations
+                    </h3>
+                    <div class="space-y-4">
+            `;
+
+            // General care recommendations
+            recommendations += `
+                <div class="bg-mint bg-opacity-5 border border-mint border-opacity-20 rounded-lg p-4">
+                    <h4 class="font-semibold text-mint mb-2">General Care</h4>
+                    <ul class="text-sm text-blue-munsell space-y-1">
+                        <li>• Get adequate rest and sleep (7-9 hours)</li>
+                        <li>• Stay hydrated by drinking plenty of fluids</li>
+                        <li>• Maintain a balanced, nutritious diet</li>
+                        <li>• Monitor your symptoms and their progression</li>
+                    </ul>
+                </div>
+            `;
+
+            // Category-specific recommendations based on symptoms
+            const categoryRecommendations = getCategoryRecommendations(symptoms);
+            recommendations += categoryRecommendations;
+
+            recommendations += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = recommendations;
+        }
+
+        // Get category-specific recommendations
+        function getCategoryRecommendations(symptoms) {
+            let recommendations = '';
+
+            // Check for respiratory symptoms
+            const respiratorySymptoms = ['Cough', 'Shortness of Breath', 'Chest Pain', 'Runny Nose', 'Sore Throat', 'Congestion', 'Wheezing'];
+            if (symptoms.some(s => respiratorySymptoms.includes(s))) {
+                recommendations += `
+                    <div class="bg-carolina-blue bg-opacity-5 border border-carolina-blue border-opacity-20 rounded-lg p-4">
+                        <h4 class="font-semibold text-carolina-blue mb-2">Respiratory Care</h4>
+                        <ul class="text-sm text-blue-munsell space-y-1">
+                            <li>• Use a humidifier to add moisture to the air</li>
+                            <li>• Try steam inhalation (hot shower or bowl of hot water)</li>
+                            <li>• Avoid smoking and exposure to irritants</li>
+                            <li>• Elevate your head while sleeping</li>
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Check for digestive symptoms
+            const digestiveSymptoms = ['Nausea', 'Vomiting', 'Diarrhea', 'Abdominal Pain', 'Indigestion', 'Constipation', 'Bloating'];
+            if (symptoms.some(s => digestiveSymptoms.includes(s))) {
+                recommendations += `
+                    <div class="bg-blue-munsell bg-opacity-5 border border-blue-munsell border-opacity-20 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-munsell mb-2">Digestive Care</h4>
+                        <ul class="text-sm text-blue-munsell space-y-1">
+                            <li>• Eat small, frequent meals</li>
+                            <li>• Avoid spicy, fatty, or acidic foods</li>
+                            <li>• Consider the BRAT diet (bananas, rice, applesauce, toast)</li>
+                            <li>• Stay hydrated with clear fluids</li>
+                        </ul>
+                    </div>
+                `;
+            }
+
+            return recommendations;
+        }
+
+        // Generate medication suggestions
+        function generateMedicationSuggestions(symptoms, severity, duration) {
+            const container = document.getElementById('medicationsSection');
+
+            let medications = `
+                <div>
+                    <h3 class="text-lg font-bold text-prussian-blue mb-4">
+                        <i class="fas fa-pills text-mint mr-2"></i>Medication Suggestions
+                    </h3>
+            `;
+
+            if (severity > 7 || duration === 'more_than_week') {
+                medications += `
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                            <h4 class="font-semibold text-red-700">Medical Consultation Required</h4>
+                        </div>
+                        <p class="text-sm text-red-600 mb-3">
+                            Based on your symptoms and their severity/duration, it is strongly recommended to consult a healthcare professional for proper diagnosis and treatment.
+                        </p>
+                        <button onclick="consultDoctor()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+                            <i class="fas fa-user-md mr-2"></i>Find a Doctor
+                        </button>
+                    </div>
+                `;
+            } else {
+                medications += `
+                    <div class="space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                                <h4 class="font-semibold text-yellow-800">Important Notice</h4>
+                            </div>
+                            <p class="text-sm text-yellow-700">
+                                These are over-the-counter suggestions. Always read labels, follow dosing instructions, and consult a pharmacist or doctor if you have questions.
+                            </p>
+                        </div>
+                        ${generateSpecificMedications(symptoms)}
+                    </div>
+                `;
+            }
+
+            medications += `</div>`;
+            container.innerHTML = medications;
+        }
+
+        // Generate specific medication recommendations
+        function generateSpecificMedications(symptoms) {
+            let medications = '';
+
+            // Pain and fever medications
+            const painSymptoms = ['Fever', 'Body Aches', 'Headache'];
+            if (symptoms.some(s => painSymptoms.includes(s))) {
+                medications += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-prussian-blue mb-3">Pain & Fever Relief</h5>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-mint bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-tablets text-mint"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-800">Acetaminophen (Tylenol)</h6>
+                                    <p class="text-sm text-blue-munsell">500-1000mg every 4-6 hours • Max: 4000mg/day</p>
+                                    <button class="text-xs bg-carolina-blue text-white px-3 py-1 rounded mt-2 hover:bg-blue-munsell transition-colors">
+                                        View Product Info
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-carolina-blue bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-capsules text-carolina-blue"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-800">Ibuprofen (Advil, Motrin)</h6>
+                                    <p class="text-sm text-blue-munsell">200-400mg every 4-6 hours • Max: 1200mg/day</p>
+                                    <button class="text-xs bg-carolina-blue text-white px-3 py-1 rounded mt-2 hover:bg-blue-munsell transition-colors">
+                                        View Product Info
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Respiratory medications
+            const respiratorySymptoms = ['Cough', 'Congestion', 'Runny Nose'];
+            if (symptoms.some(s => respiratorySymptoms.includes(s))) {
+                medications += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-prussian-blue mb-3">Respiratory Relief</h5>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-blue-munsell bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-spray-can text-blue-munsell"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-800">Guaifenesin (Mucinex)</h6>
+                                    <p class="text-sm text-blue-munsell">For chest congestion • 600-1200mg every 12 hours</p>
+                                    <button class="text-xs bg-carolina-blue text-white px-3 py-1 rounded mt-2 hover:bg-blue-munsell transition-colors">
+                                        View Product Info
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-midnight-green bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-tint text-midnight-green"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-800">Saline Nasal Spray</h6>
+                                    <p class="text-sm text-blue-munsell">For nasal congestion • Use as needed</p>
+                                    <button class="text-xs bg-carolina-blue text-white px-3 py-1 rounded mt-2 hover:bg-blue-munsell transition-colors">
+                                        View Product Info
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Digestive medications
+            const digestiveSymptoms = ['Nausea', 'Diarrhea', 'Indigestion'];
+            if (symptoms.some(s => digestiveSymptoms.includes(s))) {
+                medications += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-prussian-blue mb-3">Digestive Relief</h5>
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-12 h-12 bg-mint bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-pills text-mint"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h6 class="font-semibold text-gray-800">Bismuth Subsalicylate (Pepto-Bismol)</h6>
+                                    <p class="text-sm text-blue-munsell">For nausea, heartburn, diarrhea • Follow package directions</p>
+                                    <button class="text-xs bg-carolina-blue text-white px-3 py-1 rounded mt-2 hover:bg-blue-munsell transition-colors">
+                                        View Product Info
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return medications;
+        }
+
+        // Show doctor consultation warning
+        function showDoctorWarning() {
+            const warning = document.createElement('div');
+            warning.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mt-6';
+            warning.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-exclamation-triangle text-red-500 mr-2 pulse-dot"></i>
+                    <h4 class="font-semibold text-red-700">Medical Attention Recommended</h4>
+                </div>
+                <p class="text-sm text-red-600 mb-3">
+                    Your symptoms indicate that you should seek professional medical evaluation. This could be due to:
+                </p>
+                <ul class="text-sm text-red-600 space-y-1 mb-4">
+                    <li>• High severity level (8+ out of 10)</li>
+                    <li>• Symptoms persisting for more than a week</li>
+                    <li>• Combination of symptoms requiring professional assessment</li>
+                </ul>
+                <div class="flex space-x-3">
+                    <button onclick="consultDoctor()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+                        <i class="fas fa-user-md mr-2"></i>Find a Doctor
+                    </button>
+                    <button onclick="callEmergency()" class="bg-red-800 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-900 transition-colors">
+                        <i class="fas fa-phone mr-2"></i>Emergency Services
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('resultSection').appendChild(warning);
+        }
+
+        // Save to medical history
+        function saveToMedicalHistory() {
+            const selectedSymptoms = Array.from(document.querySelectorAll('.symptom-tag.selected'))
+                .map(tag => tag.textContent);
+            const severity = document.getElementById('severity').value;
+            const duration = document.getElementById('duration').value;
+            const notes = document.getElementById('notes').value;
+
+            // Show success message
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-mint text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>Saved to medical history successfully!</span>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+
+            // In a real application, this would send data to a server
+            console.log('Saved to medical history:', {
+                symptoms: selectedSymptoms,
+                severity,
+                duration,
+                notes,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Consult doctor
+        function consultDoctor() {
+            // In a real application, this would integrate with a doctor booking system
+            window.open('https://www.healthgrades.com/find-a-doctor', '_blank');
+        }
+
+        // Call emergency services
+        function callEmergency() {
+            if (confirm('This will attempt to call emergency services. Continue?')) {
+                window.location.href = 'tel:911';
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('symptomForm').reset();
+            document.getElementById('resultSection').classList.add('hidden');
+            document.querySelectorAll('.symptom-tag.selected').forEach(tag => {
+                tag.classList.remove('selected');
+                // Reset colors based on category
+                const category = tag.getAttribute('data-category');
+                if (category === 'Custom') {
+                    tag.remove();
+                } else {
+                    tag.className = 'symptom-tag px-3 py-2 bg-gray-100 text-gray-700 rounded-full text-sm border-2 border-transparent hover:border-' + getCategoryColor(category) + ' hover:bg-' + getCategoryColor(category) + ' hover:bg-opacity-10';
+                }
+            });
+
+            // Remove custom symptoms section if it exists
+            const customSection = document.getElementById('custom-symptoms');
+            if (customSection) {
+                customSection.remove();
+            }
+
+            // Reset severity display
+            document.getElementById('severityValue').textContent = '5';
+            document.getElementById('severityValue').className = 'font-semibold text-mint';
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Get category color
+        function getCategoryColor(category) {
+            const categoryMap = {
+                'Respiratory': 'carolina-blue',
+                'General': 'mint',
+                'Digestive': 'blue-munsell',
+                'Neurological': 'midnight-green',
+                'Skin': 'prussian-blue',
+                'Custom': 'mint'
+            };
+            return categoryMap[category] || 'mint';
+        }
+    </script>
+</body>
+
+</html>
